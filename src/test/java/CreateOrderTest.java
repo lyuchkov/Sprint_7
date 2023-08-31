@@ -1,3 +1,4 @@
+import client.OrderClient;
 import com.google.gson.Gson;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
@@ -17,7 +18,6 @@ import static org.junit.Assert.*;
 
 @RunWith(Parameterized.class)
 public class CreateOrderTest {
-    private final Gson gson = new Gson();
     private Order order;
 
     public CreateOrderTest(Order order) {
@@ -39,16 +39,13 @@ public class CreateOrderTest {
     @Test
     @DisplayName("Проверка создания заказа")
     public void orderCreationTest(){
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(order))
-                        .when()
-                        .post("/api/v1/orders");
+        OrderClient orderClient = new OrderClient();
+
+        Response response = orderClient.getOrderCreationResponse(order);
+
+        assertEquals("Тело ответа: " + response.asString(), 201, response.statusCode());
         assertNotNull(response.path("track"));
         assertThat(response.path("track"), instanceOf(Integer.class));
-        assertEquals("Тело ответа: " + response.asString(), 201, response.statusCode());
 
     }
 }

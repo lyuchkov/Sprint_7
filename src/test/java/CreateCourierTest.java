@@ -1,5 +1,4 @@
-import com.google.gson.Gson;
-import io.qameta.allure.Step;
+import client.CourierClient;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
@@ -13,119 +12,73 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class CreateCourierTest {
-    private final Gson gson = new Gson();
-
     @Before
     public void setUp() {
         RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
     }
 
     @Test
-    @DisplayName("Проверка создания курьера")
+    @DisplayName("Check response message for correct courier creation")
     public void createNewCourierTest() {
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(createCourierWithParams("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", "saske")))
-                        .when()
-                        .post("/api/v1/courier");
-        assertTrue(response.path("ok"));
+        CourierClient courierClient = new CourierClient();
+        Response response = courierClient.getCorrectCourierCreationResponse(new Courier("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", "saske"));
         assertEquals("Тело ответа: " + response.asString(), 201, response.statusCode());
-
+        assertTrue(response.path("ok"));
     }
 
     @Test
-    @DisplayName("Проверка создания двух одинаковых курьеров")
+    @DisplayName("Check response message for two equal courier creation")
     public void createTwoEqualCouriers() {
-        Courier courier = createCourierWithParams("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", "saske");
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(gson.toJson(courier))
-                .when()
-                .post("/api/v1/courier");
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(courier))
-                        .when()
-                        .post("/api/v1/courier");
-        assertEquals("Этот логин уже используется. Попробуйте другой.", response.path("message"));
+        CourierClient courierClient = new CourierClient();
+        Courier courier = new Courier("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", "saske");
+        Response response = courierClient.getTwoEqualCouriersCreationResponse(courier);
         assertEquals("Тело ответа: " + response.asString(), 409, response.statusCode());
+        assertEquals("Этот логин уже используется. Попробуйте другой.", response.path("message"));
     }
 
     @Test
     @DisplayName("Проверка создания курьера без логина")
     public void createCourierWithoutLogin() {
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(createCourierWithParams(null, "234", "saske")))
-                        .when()
-                        .post("/api/v1/courier");
-        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
+        CourierClient courierClient = new CourierClient();
+        Response response = courierClient.getWitoutLoginCourierCreationResponse(new Courier(null, "234", "saske"));
         assertEquals("Тело ответа: " + response.asString(), 400, response.statusCode());
-
+        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
     }
 
     @Test
     @DisplayName("Проверка создания курьера без пароля")
     public void createCourierWithoutPassword() {
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(createCourierWithParams("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), null, "saske")))
-                        .when()
-                        .post("/api/v1/courier");
-        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
+        CourierClient courierClient = new CourierClient();
+        Response response = courierClient.getWithoutPasswordCourierCreationResponse(new Courier("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), null, "saske"));
         assertEquals("Тело ответа: " + response.asString(), 400, response.statusCode());
-
+        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
     }
 
     @Test
     @DisplayName("Проверка создания курьера без имени")
     public void createCourierWithoutFirstName() {
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(createCourierWithParams("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", null)))
-                        .when()
-                        .post("/api/v1/courier");
-        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
+        CourierClient courierClient = new CourierClient();
+        Response response = courierClient.getWithoutFirstNameCourierCreationResponse(new Courier("naruto" + ThreadLocalRandom.current().nextInt(0, 9999999), "1234", null));
         assertEquals("Тело ответа: " + response.asString(), 400, response.statusCode());
+        assertEquals("Недостаточно данных для создания учетной записи", response.path("message"));
     }
 
     @Test
     @DisplayName("Проверка создания уже созданного курьера")
     public void createAlreadyCreatedCourier() {
-        Response response =
-                given()
-                        .header("Content-type", "application/json")
-                        .and()
-                        .body(gson.toJson(createCourierWithParams("ninja", "1234", "saske")))
-                        .when()
-                        .post("/api/v1/courier");
-        assertEquals("Этот логин уже используется. Попробуйте другой.", response.path("message"));
+        CourierClient courierClient = new CourierClient();
+        Response response = courierClient.getAlreadyCreatedCourierResponse(new Courier("ninja", "1234", "saske"));
         assertEquals("Тело ответа: " + response.asString(), 409, response.statusCode());
+        assertEquals("Этот логин уже используется. Попробуйте другой.", response.path("message"));
 
     }
 
     @Test
-    @DisplayName("Проверка наличия соединения с сервером")
+    @DisplayName("Check server connection")
     public void connectionTest() {
         Response response =
                 given()
                         .get("/api/v1/ping");
         response.then().assertThat().statusCode(200);
-    }
-
-    @Step("Создание курьера с нужными параметрами")
-    private Courier createCourierWithParams(String login, String password, String firstName) {
-        return new Courier(login, password, firstName);
     }
 }
